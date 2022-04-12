@@ -1,0 +1,32 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-family: Helvetica;
+  display: flex;
+  align-items: center;
+  background-color: #f7f7f7;
+}
+
+textarea {
+  font: inherit;
+  line-height: 1.5;
+  padding: 8px 12px;
+  margin: 0 auto;
+  border-radius: 4px 4px 0px;
+  outline: none;
+  border: 1px solid #999;
+  /* default size */
+  width: 600px;
+  height: 400px;
+}
