@@ -1,5 +1,5 @@
-window.addEventListener('load', () => {
-  const textarea = document.querySelector('textarea');
+document.addEventListener('DOMContentLoaded', () => {
+  const textarea = document.querySelector('textarea')
   textarea.focus();
   const savedText = localStorage.getItem('text');
   if (savedText !== null) {

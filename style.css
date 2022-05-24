@@ -13,16 +13,26 @@ html, body {
 body {
   -webkit-font-smoothing: antialiased;
   font-family: Segoe UI, Helvetica;
-  display: flex;
-  align-items: center;
   background-color: #fefefe;
+  position: relative;
+}
+
+canvas {
+  display: block;
+  /* height: 100%;
+  width: 100%; */
+  /* width: 750;
+  height: 400;  */
 }
 
 textarea {
+  position: absolute;
+  top: 50%;
+  left: 50%;;
+  transform: translateX(-50%) translateY(-50%);
   font: inherit;
   line-height: 1.8;
   padding: 8px 12px;
-  margin: 0 auto;
   border-radius: 4px 4px 0px;
   outline: none;
   border: 1px solid #999;
