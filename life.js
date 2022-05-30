@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+  
+  const cellSize = 5;
+  const aliveChance = 0.1;
+  const intervalDuration = 30;
 
   const containerWidth = window.innerWidth;
   const containerHeight = window.innerHeight;
@@ -6,101 +10,77 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.style.height = `${containerHeight}px`;
   document.body.style.width = `${containerWidth}px`;
 
-  const pixelSize = 8;
-  const numRows = Math.floor(containerHeight / pixelSize);
-  const numCols = Math.floor(containerWidth / pixelSize);
+  const numRows = Math.floor(containerHeight / cellSize);
+  const numCols = Math.floor(containerWidth / cellSize);
 
   const canvas = document.createElement('canvas');
   canvas.width = containerWidth;
   canvas.height = containerHeight;
   document.body.prepend(canvas);
-  
-  new Game(canvas, numRows, numCols);
+
+  let state = [...Array(numRows)].map(() => Array(numCols).fill(null));
+  for (let y = 0; y < numRows; y++) {
+    for (let x = 0; x < numCols; x++) {
+      state[y][x] = +(Math.random() < aliveChance);
+    }
+  }
+
+  setInterval(() => {
+    window.requestAnimationFrame(() => {
+      const nextState = getNextState(state);
+      paintCanvas(canvas, cellSize, state, nextState);
+      state = nextState;
+    });
+  }, intervalDuration)
 });
 
-class Cell {
-
-  constructor(context, x, y) {
-    this.context = context;
-    this.x = x;
-    this.y = y;
-    this.alive = Math.random() < 0.4;
-    this.lastAlive = false;
+function getNextState(state) {
+  const nextState = JSON.parse(JSON.stringify(state));
+  for (let y = 0; y < state.length; y++) {
+    for (let x = 0; x < state[0].length; x++) {
+      const numAliveNeighbors = getNumAliveNeighbors(state, x, y);
+      if (numAliveNeighbors === 2) {
+        nextState[y][x] = (state[y][x] === 2) ? 0 : state[y][x];
+      } else if (numAliveNeighbors === 3) {
+        nextState[y][x] = 1;
+      } else {
+        nextState[y][x] = (state[y][x] === 1) ? 2 : 0;
+      }
+    }
   }
-
-  draw() {
-    const square = new Path2D();
-    const sideLen = 8;
-    square.roundRect(this.x * sideLen, this.y * sideLen, sideLen, sideLen, [sideLen / 2]);
-    this.context.fillStyle = this.alive
-      ? '#0095ff'
-      : this.lastAlive
-        ? '#0095ff40'
-        : '#fff';
-    this.context.fill(square);
-  }
+  return nextState;
 }
 
-class Game {
-
-  constructor(canvas, numRows, numCols) {
-    this.canvas = canvas;
-    this.numRows = numRows;
-    this.numCols = numCols;
-    this.context = this.canvas.getContext('2d');
-    this.cells = [];
-    this.createGrid();
-    window.requestAnimationFrame(() => this.step());
-  }
-
-  createGrid() {
-    for (let y = 0; y < this.numRows; y++) {
-      for (let x = 0; x < this.numCols; x++) {
-        this.cells.push(new Cell(this.context, x, y));
-      }
+function getNumAliveNeighbors(state, x, y) {
+  let numAliveNeighbors = 0;
+  for (let k = y - 1; k <= y + 1; k++) {
+    for (let j = x - 1; j <= x + 1; j++) {
+      if (
+        (j < 0 || j >= state[0].length || k < 0 || k >= state.length)
+        || (j === x && k === y)
+      ) continue;
+      if (state[k][j] === 1) numAliveNeighbors++;
     }
   }
+  return numAliveNeighbors;
+}
 
-  isAlive(x, y) {
-    if (x < 0 || x >= this.numCols || y < 0 || y >= this.numRows) return false;
-    return this.cells[this.gridToIndex(x, y)].alive ? 1 : 0;
-  }
+function paintCanvas(canvas, cellSize, oldState, newState) {
+  const context = canvas.getContext('2d');
+  for (let y = 0; y < newState.length; y++) {
+    for (let x = 0; x < newState[0].length; x++) {
+      if (oldState[y][x] === newState[y][x]) continue;
+      if (newState[y][x] === 0) context.fillStyle = '#fff';
+      if (newState[y][x] === 1) context.fillStyle = '#0095ff';
+      if (newState[y][x] === 2) context.fillStyle = '#bee3fe';
 
-  gridToIndex(x, y) {
-    return x + (y * this.numCols);
-  }
+      // rounded rect
+      // const cell = new Path2D();
+      // cell.roundRect(x * cellSize, y * cellSize, cellSize, cellSize, [cellSize / 2]);
+      // context.fill(cell);
 
-  // 1. Any live cell with two or three live neighbours survives.
-  // 2. Any dead cell with three live neighbours becomes a live cell.
-  // 3. All other live cells die in the next generation. Similarly, all other dead cells stay dead.
-  checkNeighbors() {
-    for (let y = 0; y < this.numRows; y++) {
-      for (let x = 0; x < this.numCols; x++) {
-        const numAlive = this.isAlive(x - 1, y - 1) + this.isAlive(x, y - 1) + this.isAlive(x + 1, y - 1) + this.isAlive(x - 1, y) + this.isAlive(x + 1, y) + this.isAlive(x - 1, y + 1) + this.isAlive(x, y + 1) + this.isAlive(x + 1, y + 1);
-        const centerIndex = this.gridToIndex(x, y);
-        if (numAlive === 2) {
-          this.cells[centerIndex].nextAlive = this.cells[centerIndex].alive;
-        } else if (numAlive === 3) {
-          this.cells[centerIndex].nextAlive = true;
-        } else {
-          this.cells[centerIndex].nextAlive = false;
-        }
-      }
+      // rect
+      context.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
-    for (let i = 0; i < this.cells.length; i++) {
-      this.cells[i].lastAlive = this.cells[i].alive;
-      this.cells[i].alive = this.cells[i].nextAlive;
-    }
-  }
-
-  step() {
-    this.checkNeighbors();
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    for (let i = 0; i < this.cells.length; i++) {
-      this.cells[i].draw();
-    }
-    setTimeout(() => {
-      window.requestAnimationFrame(() => this.step());
-    }, 100)
   }
 }
